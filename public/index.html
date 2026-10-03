@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#06070f" id="tc">
+<title>velx trade</title>
+<script>try{const t=localStorage.getItem('sim_theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+:root{--bg:#06070f;--card:rgba(255,255,255,.055);--bd:rgba(255,255,255,.1);--tx:#f1f2f9;--mu:#9a9fba;--ac:#8b7bff;--onac:#0a0818;--up:#34e39a;--dn:#ff5d73;--sheet:#0d0f1e;--nav:rgba(8,9,18,.72);--grid:rgba(139,123,255,.09);--node:139,123,255;--line:34,211,238;--o1:#6d4aff;--o2:#06b6d4;--o3:#ec4899;--oa:.42;--shadow:0 12px 32px -14px rgba(0,0,0,.7)}
+:root[data-theme=light]{--bg:#eef0fa;--card:rgba(255,255,255,.72);--bd:rgba(30,35,80,.1);--tx:#13152b;--mu:#5c6280;--ac:#5b47e8;--onac:#fff;--up:#0e9f5b;--dn:#d4304a;--sheet:#fbfbff;--nav:rgba(246,247,254,.82);--grid:rgba(70,60,200,.08);--node:91,71,232;--line:8,145,178;--oa:.26;--shadow:0 12px 32px -16px rgba(40,40,120,.3)}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;justify-content:center}
+/* web3 background: glow orbs + fading grid + drifting node network */
+#bg{position:fixed;inset:0;z-index:0;overflow:hidden;background:var(--bg);pointer-events:none}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);opacity:var(--oa);animation:dr 28s ease-in-out infinite alternate;will-change:transform}
+.o1{width:60vmax;height:60vmax;max-width:680px;max-height:680px;left:-14%;top:-20%;background:var(--o1)}
+.o2{width:50vmax;height:50vmax;max-width:560px;max-height:560px;right:-16%;top:26%;background:var(--o2);animation-duration:34s;animation-delay:-9s}
+.o3{width:46vmax;height:46vmax;max-width:520px;max-height:520px;left:18%;bottom:-26%;background:var(--o3);animation-duration:40s;animation-delay:-15s}
+@keyframes dr{to{transform:translate(7vw,5vh) scale(1.12)}}
+.grid{position:absolute;inset:0;background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:46px 46px;-webkit-mask-image:radial-gradient(ellipse 85% 65% at 50% 35%,#000 25%,transparent 82%);mask-image:radial-gradient(ellipse 85% 65% at 50% 35%,#000 25%,transparent 82%)}
+#cv{position:absolute;inset:0}
+.vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,var(--bg) 130%)}
+@media (prefers-reduced-motion:reduce){.orb,.pulse{animation:none}}
+#app{position:relative;z-index:1;width:100%;max-width:440px;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+body.booting #v,body.booting #nav,body.booting #auth,body.locked #v,body.locked #nav{visibility:hidden}
+.scroll{flex:1;overflow-y:auto;padding:0 16px 16px}
+.top{display:flex;align-items:center;gap:12px;padding:16px 0}
+.av{width:44px;height:44px;border-radius:50%;background:var(--ac);color:var(--onac);display:grid;place-items:center;font-size:19px;font-weight:800;box-shadow:0 0 0 4px var(--card)}
+.mu{color:var(--mu);font-size:13px}
+.bal{text-align:center;font-size:52px;font-weight:700;margin:18px 0 4px;letter-spacing:-1px}
+.chg{text-align:center;font-weight:600}.up{color:var(--up)}.dn{color:var(--dn)}
+.acts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:24px 0}
+.acts div{background:var(--card);border:1px solid var(--bd);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:16px;padding:14px 0;text-align:center;font-size:13px;color:var(--mu);opacity:.6}
+.acts span{display:block;font-size:22px;color:var(--ac)}.acts div.live{opacity:1;cursor:pointer;color:var(--tx)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.item{background:var(--card);border:1px solid var(--bd);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:18px;padding:14px;margin-bottom:10px}
+.coin{width:44px;height:44px;border-radius:50%;background:#2775ca;color:#fff;display:grid;place-items:center;font-weight:700}
+nav{display:flex;justify-content:space-around;padding:10px 0 calc(10px + env(safe-area-inset-bottom,0px));background:var(--nav);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--bd)}
+nav button{background:none;border:0;color:var(--mu);font:inherit;font-size:12px;padding:6px 14px;cursor:pointer}
+nav button span{display:block;font-size:22px}nav button.on{color:var(--ac)}
+.go{width:100%;border:0;border-radius:16px;padding:16px;font:inherit;font-weight:700;font-size:17px;cursor:pointer;background:var(--ac);color:var(--onac);box-shadow:0 10px 26px -12px var(--ac)}
+.go:disabled{opacity:.5;cursor:default}.go.stop{background:var(--dn);color:#fff}
+.ghost{background:none;border:1px solid var(--bd);color:var(--mu);border-radius:12px;padding:8px 14px;font:inherit;cursor:pointer;margin-top:8px}
+.pulse{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--up);margin-right:6px;animation:p 1.2s infinite}
+@keyframes p{50%{opacity:.25}}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:14px 0}
+.stats div{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px;text-align:center}.stats b{display:block;font-size:17px}
+input,select,.fld{width:100%;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:12px;font:inherit;margin:6px 0 12px}
+.fld::placeholder,input::placeholder{color:var(--mu)}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:3px;gap:2px}
+.seg button{border:0;background:none;color:var(--mu);font:inherit;font-size:13px;padding:6px 10px;border-radius:9px;cursor:pointer}
+html[data-theme=dark] .seg [data-th=dark],html[data-theme=light] .seg [data-th=light]{background:var(--ac);color:var(--onac)}
+/* login */
+#auth{position:absolute;inset:0;z-index:6;overflow-y:auto;display:flex;flex-direction:column;padding:24px 18px calc(24px + env(safe-area-inset-bottom,0px))}
+#auth[hidden]{display:none}
+.abox{width:100%;max-width:380px;margin:auto;background:var(--card);border:1px solid var(--bd);border-radius:26px;padding:22px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:var(--shadow)}
+.abox h1{font-size:26px;margin:0;letter-spacing:-.5px}
+.logo{font-weight:800;font-size:20px;letter-spacing:-.5px}.logo span{color:var(--ac)}
+.tabs{display:flex;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:4px;margin-bottom:16px}
+.tabs button{flex:1;border:0;background:none;color:var(--mu);font:inherit;font-weight:600;padding:9px;border-radius:10px;cursor:pointer}
+.tabs button.on{background:var(--ac);color:var(--onac)}
+/* sheets */
+#dep,#adm{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;z-index:7}#adm{z-index:8}
+#dep[hidden],#adm[hidden]{display:none}
+.sheet{background:var(--sheet);border:1px solid var(--bd);width:100%;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));max-height:92%;overflow-y:auto}
+.sheet .item .row{margin:4px 0}.adr{word-break:break-all;margin-bottom:12px}.sheet .go{margin-top:2px}.sheet label{display:block}
+#boot{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;padding:24px;transition:opacity .4s}
+#boot.out{opacity:0;pointer-events:none}
+.bt{font-size:30px;font-weight:800;color:var(--ac);text-align:center}
+.pw{position:relative;margin:6px 0 12px}.pw input{margin:0;padding-right:74px}
+.eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--mu);font:inherit;font-size:13px;font-weight:600;padding:8px 10px;cursor:pointer;border-radius:8px}.eye:hover{color:var(--tx)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+</style></head><body class="booting locked">
+<div id="bg"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div><div class="grid"></div><canvas id="cv"></canvas><div class="vig"></div></div>
+<div id="app">
+<div class="scroll" id="v"></div>
+<nav id="nav"></nav>
+<div id="auth"></div>
+<div id="dep" hidden><div class="sheet" role="dialog" aria-label="Deposit">
+<div class="row"><b style="font-size:20px">Deposit USDT (TRC20)</b><button class="ghost" id="dx" style="margin:0">Close</button></div>
+<div class="item" style="margin:12px 0"><div class="mu" id="dtag"></div><div class="adr" id="dad" style="font-weight:700;margin:6px 0 4px"></div><button class="ghost" id="dc" style="margin-top:4px">Copy address</button></div>
+<div class="item" style="margin:0 0 12px;padding:10px 12px;font-size:14px">📝 Please submit your transaction hash after your deposit to confirm the deposit.</div>
+<label class="mu" for="dh">Transaction hash</label>
+<input id="dh" placeholder="Paste transaction hash" autocomplete="off" autocapitalize="off" spellcheck="false">
+<button class="go" id="dv">Verify &amp; deposit</button>
+<div id="dres" style="margin-top:12px"></div>
+<div id="dl"></div>
+</div></div>
+<div id="adm" hidden><div class="sheet" role="dialog" aria-label="Admin" id="ad"></div></div>
+<div id="boot"><div class="bt">velx trade</div><div class="mu" id="bs" style="text-align:center;margin:6px 0 18px"><span class="pulse"></span>Loading · live prices</div><div id="bl"></div></div>
+</div>
+
+<script>
+/* Background network canvas (independent of the app script). */
+(function(){
+ const c=document.getElementById('cv');if(!c)return;
+ const x=c.getContext('2d'),reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ let w=0,h=0,P=[],nc='139,123,255',lc='34,211,238',raf=0;
+ const cs=()=>getComputedStyle(document.documentElement);
+ window.bgColors=()=>{nc=cs().getPropertyValue('--node').trim()||nc;lc=cs().getPropertyValue('--line').trim()||lc;if(reduce)draw(0)};
+ function size(){
+  const dpr=Math.min(devicePixelRatio||1,2);w=innerWidth;h=innerHeight;c.width=w*dpr;c.height=h*dpr;x.setTransform(dpr,0,0,dpr,0,0);
+  const n=Math.max(18,Math.min(64,Math.round(w*h/24000)));
+  P=Array.from({length:n},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.28,vy:(Math.random()-.5)*.28,r:1+Math.random()*1.8}));
+  if(reduce)draw(0)}
+ function draw(step){
+  x.clearRect(0,0,w,h);
+  if(step)for(const p of P){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1}
+  const D=140;
+  for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
+   const a=P[i],b=P[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+   if(d<D){x.strokeStyle='rgba('+lc+','+((1-d/D)*.28).toFixed(3)+')';x.lineWidth=1;x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke()}}
+  x.fillStyle='rgba('+nc+',.75)';
+  for(const p of P){x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fill()}}
+ const loop=()=>{draw(1);raf=requestAnimationFrame(loop)};
+ addEventListener('resize',size);
+ document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(raf);if(!document.hidden&&!reduce)loop()});
+ size();bgColors();if(!reduce)loop();
+})();
+</script>
+<script>
+/* Live market engine: simulated random walk, seeded with real prices when reachable. Runs on its own so it keeps going even if the app script fails. */
+const LV={px:{BTC:67000,ETH:3500,SOL:160,BNB:600,XRP:0.6,TRX:0.33},o:{},ch:{},ok:0,real:false,subs:[],feed:[],blk:66000000,tps:72,on:1280};
+Object.assign(LV.o,LV.px);
+const PR=['BTC/USDT','ETH/USDT','SOL/USDT','BNB/USDT','XRP/USDT'];
+LV.fmt=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:v<10?4:2,maximumFractionDigits:v<10?4:2});
+LV.chg=k=>LV.real&&k in LV.ch?LV.ch[k]:(LV.px[k]/LV.o[k]-1)*100; // real: 24h change from the market; fallback: change since load
+LV.label=t=>t==='apps'?'network activity':!LV.real?' · live prices unavailable':Date.now()-LV.ok>90000?'Prices delayed':'Live market prices';
+LV.rows=n=>Object.keys(LV.px).slice(0,n||9).map(k=>{const c=LV.chg(k);return `<div class="item row" style="padding:11px 14px;margin:0 0 8px"><b>${k}/USDT</b><div style="text-align:right"><b>${LV.fmt(LV.px[k])}</b><div class="${c>=0?'up':'dn'} mu">${c>=0?'+':''}${c.toFixed(2)}%</div></div></div>`}).join('');
+LV.tick=()=>{
+ if(!LV.real)for(const k in LV.px)LV.px[k]*=1+(Math.random()-.5)*.002; // only simulate while real prices are unavailable
+ LV.blk++;LV.tps=Math.max(40,Math.min(120,LV.tps+Math.round((Math.random()-.5)*8)));LV.on=Math.max(800,LV.on+Math.round((Math.random()-.5)*20));
+ if(Math.random()<.6){const w=Math.random()<.72;LV.feed.unshift({p:PR[Math.floor(Math.random()*PR.length)],side:Math.random()<.5?'Long':'Short',pl:w?Math.round((.05+Math.random()*.85)*100)/100:-Math.round((.02+Math.random()*.28)*100)/100});LV.feed=LV.feed.slice(0,6)}
+ LV.subs.forEach(f=>{try{f()}catch(e){}})};
+setInterval(LV.tick,1000);
+LV.subs.push(()=>{const l=document.getElementById('bl');if(l)l.innerHTML=LV.rows(4)});
+LV.pull=async()=>{try{
+ const r=await fetch('/api/prices',{cache:'no-store'});if(!r.ok)throw 0;
+ const j=await r.json();let n=0;
+ for(const k in LV.px){const x=j.prices&&j.prices[k];if(x&&x.p>0){LV.px[k]=x.p;LV.ch[k]=x.c;n++}}
+ if(n){LV.real=true;LV.ok=Date.now()}
+}catch(e){}};
+LV.pull();setTimeout(()=>{if(!LV.real)LV.pull()},4000);setInterval(LV.pull,20000);
+</script>
+<script>
+const $=s=>document.querySelector(s);
+const store={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+const f=(n,d=2)=>n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sgn=n=>(n>=0?'+':'-')+'$'+f(Math.abs(n));
+const r2=n=>Math.round(n*100)/100;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg=(t,c)=>`<div class="item ${c||''}" style="margin:0">${esc(t)}</div>`;
+const short=a=>a.slice(0,6)+'…'+a.slice(-4);
+const PAIRS=['BTC/USDT','ETH/USDT','SOL/USDT','BNB/USDT','XRP/USDT'];
+// S.start = total deposited (server), S.bal = deposited + trading P/L
+let S={bal:0,start:0,trades:[],active:false,deps:[]},tab='home',timer=null,TOK=store.get('sim_tok')||'',ATOK='',USER='',BE=false,BE_ADMIN=false,CFG_ADDR='',mode='in';
+const SW={a:'100',c:'BTC'};
+
+/* ---------- show / hide password buttons (applied to every password field) ---------- */
+function eyes(){
+ document.querySelectorAll('input[type=password]:not([data-eye])').forEach(i=>{
+  i.dataset.eye='1';
+  const w=document.createElement('div');w.className='pw';i.parentNode.insertBefore(w,i);w.appendChild(i);
+  i.setAttribute('autocapitalize','none');i.setAttribute('autocorrect','off');i.spellcheck=false;
+  const b=document.createElement('button');b.type='button';b.className='eye';b.textContent='Show';
+  b.setAttribute('aria-label','Show password');b.setAttribute('aria-pressed','false');
+  b.onclick=()=>{const show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'Hide':'Show';b.setAttribute('aria-label',show?'Hide password':'Show password');b.setAttribute('aria-pressed',String(show))};
+  w.appendChild(b)})}
+new MutationObserver(eyes).observe(document.body,{childList:true,subtree:true});eyes();
+
+/* ---------- theme ---------- */
+function setTheme(t){document.documentElement.dataset.theme=t;store.set('sim_theme',t);$('#tc').content=t==='light'?'#eef0fa':'#06070f';if(window.bgColors)bgColors()}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-th]');if(b)setTheme(b.dataset.th)});
+const seg=l=>`<div class="seg" role="group" aria-label="Theme"><button type="button" data-th="dark" aria-label="Dark theme">☾${l?' Dark':''}</button><button type="button" data-th="light" aria-label="Light theme">☀${l?' Light':''}</button></div>`;
+
+/* ---------- api ---------- */
+async function api(path,body,tok){
+ tok=tok===undefined?TOK:tok;
+ const r=await fetch('/api/'+path,{method:body?'POST':'GET',cache:'no-store',headers:Object.assign({'Content-Type':'application/json'},tok?{Authorization:'Bearer '+tok}:{}),body:body?JSON.stringify(body):undefined});
+ let j={};try{j=await r.json()}catch(e){}
+ if(!r.ok){const e=new Error(j.error||'Request failed ('+r.status+')');e.status=r.status;throw e}return j}
+async function loadCfg(){try{const j=await api('config',null,'');BE=true;BE_ADMIN=!!j.admin;CFG_ADDR=j.addr||''}catch(e){BE=false}}
+
+/* ---------- login / accounts ---------- */
+const aerr=(t,ok)=>{const e=$('#ae');if(e)e.innerHTML=t?`<div class="item ${ok?'':'dn'}" style="margin:12px 0 0;padding:10px 12px;font-size:14px" role="alert">${esc(t)}</div>`:''};
+function authPaint(note){
+ const reg=mode==='reg';
+ $('#auth').innerHTML=`<div class="abox">
+  <div class="row" style="margin-bottom:26px"><div class="logo">velx<span>trade</span></div>${seg(true)}</div>
+  <h1>${reg?'Create your account':'Welcome back'}</h1>
+  <p class="mu" style="margin:6px 0 18px">${reg?'Sign up to start trading. Your balance starts at $0.00.':'Sign in to your account.'}</p>
+  <div class="tabs"><button type="button" data-m="in" class="${reg?'':'on'}">Sign in</button><button type="button" data-m="reg" class="${reg?'on':''}">Create account</button></div>
+  <form id="af" novalidate>
+   <label class="mu" for="lu">Username</label>
+   <input id="lu" class="fld" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. alex_01">
+   <label class="mu" for="lp">Password</label>
+   <input id="lp" class="fld" type="password" autocomplete="${reg?'new-password':'current-password'}" placeholder="${reg?'8+ characters':'Your password'}">
+   ${reg?`<label class="mu" for="lp2">Repeat password</label><input id="lp2" class="fld" type="password" autocomplete="new-password" placeholder="Repeat password">`:''}
+   <button class="go" id="lg" type="submit">${reg?'Create account':'Sign in'}</button>
+  </form>
+  <div id="ae"></div>
+ </div>`;
+ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;authPaint()});
+ $('#af').onsubmit=async e=>{
+  e.preventDefault();
+  const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value,b=$('#lg');
+  if(!/^[a-z0-9_]{3,20}$/.test(u))return aerr('Username: 3–20 letters, numbers or underscores.');
+  if(reg){if(p.length<8)return aerr('Password must be at least 8 characters.');if(p!==$('#lp2').value)return aerr('Passwords do not match.')}
+  else if(!p)return aerr('Enter your password.');
+  b.disabled=true;aerr('');
+  try{const j=await api(reg?'auth/register':'auth/login',{username:u,password:p},'');TOK=j.token;store.set('sim_tok',TOK);enterApp(j.user)}
+  catch(er){aerr(er.message)}
+  b.disabled=false};
+ if(note)aerr(note,true)}
+const load=u=>({start:u.dep,bal:r2(u.dep+u.pnl),trades:u.trades||[],deps:u.deps||[],active:false});
+function enterApp(u){USER=u.username;S=load(u);tab='home';document.body.classList.remove('locked');$('#auth').hidden=true;paint()}
+function showAuth(note){
+ clearTimeout(st);st=null;clearInterval(timer);S={bal:0,start:0,trades:[],active:false,deps:[]};USER='';
+ closeDep();document.body.classList.add('locked');$('#auth').hidden=false;authPaint(note)}
+function kick(){TOK='';store.del('sim_tok');mode='in';showAuth('Session expired. Please sign in again.')}
+async function logout(){
+ clearTimeout(st);st=null;clearInterval(timer);
+ try{await pushState()}catch(e){}
+ try{await api('auth/logout',{})}catch(e){}
+ TOK='';store.del('sim_tok');mode='in';showAuth()}
+
+/* ---------- trading simulation (P/L is saved to the server, which bounds it) ---------- */
+let st=null;
+const pnl=()=>r2(S.bal-S.start);
+function save(){if(!TOK||st)return;st=setTimeout(()=>{st=null;pushState()},4000)}
+async function pushState(){
+ if(!TOK)return;
+ try{await api('me/state',{pnl:pnl(),trades:S.trades.slice(0,200)})}
+ catch(e){if(e.status===401)return kick();if(e.status===409)resync()}}
+async function resync(){try{const act=S.active;S=load(await api('me'));S.active=act;paint(true)}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&TOK&&S.start>0){clearTimeout(st);st=null;pushState()}});
+const rr=(a,b)=>a+Math.random()*(b-a);
+function trade(){
+ if(S.bal<=0){return toggle()}
+ const win=Math.random()<.72;
+ let pl=Math.max(.01,r2(S.bal*(win?rr(.00005,.0009):rr(.00002,.0003))));
+ if(!win)pl=-Math.min(pl,S.bal);
+ S.bal=r2(S.bal+pl);
+ S.trades.unshift({p:PAIRS[Math.floor(Math.random()*PAIRS.length)],pl,t:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}),side:Math.random()<.5?'Long':'Short'});
+ S.trades=S.trades.slice(0,200);save();paint(true)}
+function toggle(){
+ if(!S.active&&S.bal<=0)return;
+ S.active=!S.active;clearInterval(timer);if(S.active)timer=setInterval(trade,2200);else{clearTimeout(st);st=null;pushState()}paint()}
+function reset(){clearInterval(timer);S.bal=S.start;S.trades=[];S.active=false;clearTimeout(st);st=null;pushState();paint()}
+
+/* ---------- screens ---------- */
+function paint(soft){
+ const d=r2(S.bal-S.start),pct=S.start>0?d/S.start*100:0,wins=S.trades.filter(t=>t.pl>0).length,losses=S.trades.length-wins;
+ const cls=d>=0?'up':'dn';
+ let h='';
+ if(tab==='home'){
+  h=`<div class="top"><div class="av">${esc((USER[0]||'?').toUpperCase())}</div><div style="flex:1;min-width:0"><div class="mu">Welcome</div><b style="overflow-wrap:anywhere">${esc(USER)}</b></div>${seg()}</div>
+  <div class="bal">$${f(S.bal)}</div><div class="chg ${cls}">${sgn(d)} · ${d>=0?'+':''}${f(pct)}%</div>
+  <div class="acts"><div><span>▦</span>Receive</div><div><span>➤</span>Send</div><div><span>⇄</span>Swap</div><div class="live" id="dp" role="button" tabindex="0"><span>＋</span>Deposit</div></div>
+  ${S.start<=0?`<div class="item" style="text-align:center"><b>Your balance is $0.00</b><div class="mu" style="margin:6px 0 12px">Deposit USDT (TRC20), then submit your transaction hash to confirm it.</div><button class="go" id="dp2">Deposit USDT</button></div>`:''}
+  <div class="item row"><div class="row"><div class="coin">$</div><div><b>USDT</b><div class="mu">${f(S.bal)} USDT</div></div></div><div style="text-align:right"><b>$${f(S.bal)}</b><div class="${cls} mu">${sgn(d)}</div></div></div>
+  <div class="item row"><div class="row"><div class="coin" style="background:#111">S</div><div><b>Solana</b><div class="mu">0 SOL</div></div></div><b>$0.00</b></div>
+  <button class="ghost" id="lo" style="width:100%;margin-top:6px">Log out</button>`;
+ }else if(tab==='roi'){
+  h=`<div class="top"><div><b style="font-size:22px">ROI</b><div class="mu">Roi Of Deposited Funds</div></div></div>
+  <div class="item"><div class="mu">balance</div><div style="font-size:34px;font-weight:700">$${f(S.bal)}</div>
+  <div class="${cls}" style="font-weight:600">${sgn(d)} (${d>=0?'+':''}${f(pct)}%) from $${f(S.start)}</div></div>
+  <button class="go ${S.active?'stop':''}" id="go" ${!S.active&&S.bal<=0?'disabled':''}>${S.active?'Stop trade':'Active trade'}</button>
+  ${S.bal<=0&&!S.active?`<div class="mu" style="margin-top:10px;text-align:center">Deposit USDT first to start trading.</div>`:''}
+  ${S.active?`<div class="mu" style="margin-top:10px;text-align:center"><span class="pulse"></span>Bot is trading</div>`:''}
+  <div class="stats"><div><b>${S.trades.length}</b><span class="mu">Trades</span></div><div><b class="up">${wins}</b><span class="mu">Wins</span></div><div><b class="dn">${losses}</b><span class="mu">Losses</span></div></div>
+  <h3 style="margin:16px 0 8px">Trade log</h3>`+
+  (S.trades.length?S.trades.slice(0,40).map(t=>`<div class="item row" style="padding:11px 14px"><div><b>${esc(t.p)}</b> <span class="mu">${esc(t.side)}</span><div class="mu">${esc(t.t)}</div></div><b class="${t.pl>=0?'up':'dn'}">${sgn(t.pl)}</b></div>`).join(''):'<p class="mu">Your trades will show up here.</p>')+
+  `<button class="ghost" id="rs">Reset</button>`;
+ }else if(tab==='explore'){
+  h=`<div class="top"><div><b style="font-size:22px">Explore</b><div class="mu" id="lst"></div></div></div><div id="lv"></div>`;
+ }else if(tab==='apps'){
+  h=`<div class="top"><div><b style="font-size:22px">Apps</b><div class="mu" id="lst"></div></div></div><div id="lv"></div>`;
+ }else{
+  h=`<div class="top"><div><b style="font-size:22px">Swap</b><div class="mu" id="lst"></div></div></div>
+  <label class="mu" for="sa">You pay (USDT)</label><input class="fld" id="sa" type="number" inputmode="decimal" min="0" value="${esc(SW.a)}">
+  <label class="mu" for="sc">You receive</label><select class="fld" id="sc">${Object.keys(LV.px).map(k=>`<option ${k===SW.c?'selected':''}>${k}</option>`).join('')}</select><div id="lv"></div>`;
+ }
+ const sc=$('#v'),y=sc.scrollTop;sc.innerHTML=h;if(soft)sc.scrollTop=y;
+ $('#nav').innerHTML=[['home','⌂','Home'],['apps','▦','Apps'],['swap','⇄','Swap'],['roi','◷','ROI'],['explore','◎','Explore']].map(([k,i,l])=>`<button data-t="${k}" class="${tab===k?'on':''}"><span>${i}</span>${l}</button>`).join('');
+ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;paint()});
+ if($('#dp'))$('#dp').onclick=openDep;if($('#dp2'))$('#dp2').onclick=openDep;if($('#lo'))$('#lo').onclick=logout;
+ if($('#sa')){$('#sa').oninput=e=>{SW.a=e.target.value;tabLive()};$('#sc').onchange=e=>{SW.c=e.target.value;tabLive()}}
+ tabLive();if($('#go'))$('#go').onclick=toggle;if($('#rs'))$('#rs').onclick=reset}
+
+function tabLive(){
+ const e=$('#lv');if(!e)return;
+ const stt=$('#lst');if(stt)stt.innerHTML='<span class="pulse"></span>'+LV.label(tab);
+ if(tab==='explore')e.innerHTML=LV.rows();
+ else if(tab==='apps')e.innerHTML=`<div class="stats"><div><b>${f(LV.blk,0)}</b><span class="mu">Block</span></div><div><b>${LV.tps}</b><span class="mu">TPS</span></div><div><b>${f(LV.on,0)}</b><span class="mu">Online</span></div></div>
+  <h3 style="margin:16px 0 8px">Live trade feed</h3>`+LV.feed.map(t=>`<div class="item row" style="padding:11px 14px"><div><b>${t.p}</b> <span class="mu">${t.side}</span></div><b class="${t.pl>=0?'up':'dn'}">${sgn(t.pl)}</b></div>`).join('');
+ else{
+  const a=Math.max(0,+SW.a||0),px=LV.px[SW.c],out=a*.999/px;
+  e.innerHTML=`<div class="item"><div class="mu">You receive ≈</div><div style="font-size:30px;font-weight:700">${f(out,px>1000?6:4)} ${SW.c}</div>
+  <div class="mu" style="margin-top:6px">1 ${SW.c} = ${LV.fmt(px)} · fee 0.10%${LV.real?'':' · simulated'}</div></div>`}}
+LV.subs.push(tabLive);
+
+/* ---------- deposit ---------- */
+const SIM_ADDR='TMk3qPz8WvXb2NfYdR5sJcH7uLgA9eQtVy'; // simulated placeholder (not a real wallet)
+function dlist(){
+ $('#dl').innerHTML=S.deps.length?'<h3 style="margin:16px 0 8px">Deposit history</h3>'+S.deps.slice(0,10).map(d=>`<div class="item row" style="padding:11px 14px"><div><b>USDT TRC20</b><div class="mu">${esc(new Date(d.at).toLocaleString([],{dateStyle:'short',timeStyle:'short'}))} · ${esc(d.h.slice(0,10))}…</div></div><b class="up">+$${f(d.amt)}</b></div>`).join(''):''}
+function depRender(){
+ $('#dad').textContent=CFG_ADDR||SIM_ADDR;
+ $('#dtag').textContent=CFG_ADDR?'Send USDT (TRC20 only) to this address':'Simulated address · not a real wallet, do not send funds'}
+function openDep(){$('#dep').hidden=false;$('#dh').value='';$('#dres').innerHTML='';$('#dc').textContent='Copy address';depRender();dlist();loadCfg().then(depRender)}
+async function copyAddr(){
+ const a=CFG_ADDR||SIM_ADDR;
+ try{await navigator.clipboard.writeText(a)}catch(e){const t=document.createElement('textarea');t.value=a;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}
+ $('#dc').textContent='Copied ✓';setTimeout(()=>$('#dc').textContent='Copy address',1500)}
+let pollT=null,polls=0,POLL_MS=15000;
+const closeDep=()=>{clearTimeout(pollT);$('#dep').hidden=true};
+async function verify(auto){
+ clearTimeout(pollT);if(!auto)polls=0;
+ const h=$('#dh').value.trim(),out=$('#dres'),b=$('#dv');
+ if(!h){out.innerHTML=msg('Paste a transaction hash first.','dn');return}
+ b.disabled=true;b.textContent='Checking…';if(!auto)out.innerHTML='';
+ try{
+  const r=await api('deposit/verify',{hash:h});
+  const again=r.state==='pending'&&++polls<=20;
+  const L={success:['Successful','up'],failed:['Failed','dn'],pending:['Pending',''],notfound:['Not found','']}[r.state];
+  const note=r.credited?'$'+f(r.amt)+' added to your balance.'
+   :r.state==='success'?(r.other?`This transaction sent ${f(r.other.amt)} USDT to ${short(r.other.to)}, not to the deposit address shown above. Nothing was added.`:'Confirmed, but it contains no USDT (TRC20) transfer to the deposit address. Nothing was added.')
+   :r.state==='failed'?'The transaction failed. Nothing was added.'
+   :r.state==='pending'?(again?'Not confirmed yet. Checking again automatically…':'Still not confirmed. Tap Verify again later.')
+   :'Transaction not found on Tron. Check the hash.';
+  out.innerHTML=`<div class="item" style="margin:0"><div class="row"><span class="mu">Status</span><b class="${L[1]}" ${L[1]?'':'style="color:#f5a623"'}>${L[0]}</b></div>
+  <div class="row"><span class="mu">Token</span><b>USDT (TRC20)</b></div>
+  <div class="row"><span class="mu">Amount</span><b>${r.amt>0&&r.state!=='failed'?f(r.amt)+' USDT':'—'}</b></div>
+  <div class="mu" style="margin-top:8px">${esc(note)}</div></div>`;
+  if(r.credited){S.bal=r2(S.bal+(r.dep-S.start));S.start=r.dep;S.deps=r.deps;paint(true);dlist();$('#dh').value=''}
+  if(again)pollT=setTimeout(()=>{if(!$('#dep').hidden&&$('#dh').value.trim()===h)verify(true)},POLL_MS);
+ }catch(e){if(e.status===401){b.disabled=false;b.textContent='Verify & deposit';return kick()}out.innerHTML=msg(e.message||'Could not reach the server.','dn')}
+ b.disabled=false;b.textContent='Verify & deposit'}
+$('#dx').onclick=closeDep;
+$('#dv').onclick=()=>verify();$('#dc').onclick=copyAddr;
+$('#dep').onclick=e=>{if(e.target.id==='dep')closeDep()};
+$('#dh').onkeydown=e=>{if(e.key==='Enter')verify()};
+
+/* ---------- admin ---------- */
+async function openAdm(){await loadCfg();$('#adm').hidden=false;admPaint()}
+function closeAdm(){RESETTING=false;if(ATOK)api('admin/logout',{},ATOK).catch(()=>{});ATOK='';$('#adm').hidden=true;if(location.hash==='#admin')history.replaceState(null,'',location.pathname)}
+const am=(t,c)=>{const e=$('#am');if(e)e.innerHTML=msg(t,c)};
+const keyMsg=ok=>ok===true?['API key saved and working.','up']:ok===false?['Saved, but TronGrid rejected the key. Check it.','dn']:['Saved, but the key could not be tested (network).',''];
+let RESETTING=false;
+async function admPaint(){
+ const d=$('#ad');
+ const head='<div class="row"><b style="font-size:20px">Admin</b><button class="ghost" id="ax" style="margin:0">Close</button></div>';
+ if(!BE){d.innerHTML=head+'<p class="mu">Can’t reach the server. Start it with <b>node server.js</b>.</p>';$('#ax').onclick=closeAdm;return}
+ if(!ATOK&&RESETTING){
+  d.innerHTML=head+`<p class="mu" style="margin-top:12px">Forgot your passcode? Enter the <b>reset key</b> shown in the server console when the server started, then choose a new passcode. Users, balances, the API key and the deposit address stay exactly as they are.</p>
+  <input id="rk" type="password" autocomplete="off" aria-label="Reset key" placeholder="Reset key">
+  <input id="rp" type="password" autocomplete="off" aria-label="New passcode" placeholder="New passcode (6+ characters)">
+  <input id="rp2" type="password" autocomplete="off" aria-label="Repeat new passcode" placeholder="Repeat new passcode">
+  <button class="go" id="rb">Reset passcode</button><button class="ghost" id="rbk" style="width:100%">Back</button><div id="am" style="margin-top:12px"></div>`;
+  $('#rbk').onclick=()=>{RESETTING=false;admPaint()};
+  $('#rb').onclick=async()=>{
+   try{
+    const k=$('#rk').value.trim(),p=$('#rp').value;
+    if(!k)throw new Error('Enter the reset key.');
+    if(p.length<6)throw new Error('Use at least 6 characters.');
+    if(p!==$('#rp2').value)throw new Error('Passcodes do not match.');
+    ATOK=(await api('admin/reset',{key:k,passcode:p},'')).token;RESETTING=false;await admPaint();am('Passcode reset. You are logged in.','up')
+   }catch(e){am(e.message||'Could not reset.','dn')}};
+ }else if(!ATOK){
+  const need=!BE_ADMIN;
+  d.innerHTML=head+`<p class="mu" style="margin-top:12px">${need?'First time here: create an admin passcode (6+ characters).':'Enter the admin passcode.'}</p>
+  <input id="ap" type="password" autocomplete="off" placeholder="Passcode">${need?'<input id="ap2" type="password" autocomplete="off" placeholder="Repeat passcode">':''}
+  <button class="go" id="al">${need?'Create admin':'Log in'}</button>${need?'':'<button class="ghost" id="fp" style="width:100%">Forgot passcode?</button>'}<div id="am" style="margin-top:12px"></div>`;
+  if($('#fp'))$('#fp').onclick=()=>{RESETTING=true;admPaint()};
+  $('#al').onclick=async()=>{
+   const pw=$('#ap').value;
+   try{
+    if(need){if(pw.length<6)throw new Error('Use at least 6 characters.');if(pw!==$('#ap2').value)throw new Error('Passcodes do not match.')}
+    ATOK=(await api(need?'admin/setup':'admin/login',{passcode:pw},'')).token;BE_ADMIN=true;await admPaint()
+   }catch(e){am(e.message||'Could not log in.','dn')}};
+ }else{
+  let AC,UL;
+  try{[AC,UL]=await Promise.all([api('admin/config',null,ATOK),api('admin/users',null,ATOK)])}catch(e){ATOK='';return admPaint()}
+  const users=UL.users;
+  d.innerHTML=head+`<h3 style="margin:14px 0 4px">TronGrid API key</h3>
+  <input id="ak" type="password" autocomplete="off" spellcheck="false" aria-label="TronGrid API key" placeholder="${AC.hasKey?'Saved (…'+esc(AC.hint)+') · paste to replace':'Paste API key'}">
+  <button class="go" id="aks">Save &amp; test API key</button>
+  ${AC.hasKey?'<button class="ghost" id="akr" style="width:100%">Remove saved key</button>':''}
+  <h3 style="margin:20px 0 4px">Deposit wallet address (Tron TRC20)</h3>
+  <input id="aa" autocomplete="off" spellcheck="false" aria-label="Deposit wallet address" placeholder="T…" value="${esc(AC.addr)}">
+  <div class="mu" style="margin-bottom:8px">Now showing users: ${AC.addr?'your address':'the simulated address (deposits stay closed)'}</div>
+  <button class="go" id="aas">Save address</button>
+  ${AC.addr?'<button class="ghost" id="aar" style="width:100%">Switch back to simulated address</button>':''}
+  <div id="am" style="margin:12px 0"></div>
+  <h3 style="margin:20px 0 8px">Users (${users.length})</h3>
+  ${users.length?users.map(u=>`<div class="item row" style="padding:10px 14px"><div style="min-width:0"><b style="overflow-wrap:anywhere">${esc(u.username)}</b><div class="mu">$${f(u.dep)} deposited · joined ${esc(new Date(u.created).toLocaleDateString())}</div></div><button class="ghost rm" data-u="${esc(u.username)}" style="margin:0;flex:none">Remove</button></div>`).join(''):'<p class="mu" style="margin:0 0 8px">No users yet.</p>'}
+  <div style="margin-top:12px"><input id="nu" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="New username" placeholder="New username">
+  <input id="np" type="password" autocomplete="new-password" aria-label="New user password" placeholder="Password (8+ characters)">
+  <button class="go" id="nub">Add user</button></div>
+  <h3 style="margin:20px 0 4px">Admin passcode</h3>
+  <input id="an" type="password" autocomplete="off" aria-label="New admin passcode" placeholder="New passcode (6+ characters)">
+  <button class="ghost" id="anb" style="width:100%;margin-top:0">Update passcode</button>
+  <button class="ghost" id="alo" style="width:100%">Log out</button>`;
+  const run=fn=>async()=>{try{await fn()}catch(e){if(e.status===401){ATOK='';return admPaint()}am(e.message||'Something went wrong.','dn')}};
+  const setKey=async k=>{const j=await api('admin/config',{key:k},ATOK);await admPaint();am(...(k?keyMsg(j.keyOk):['API key removed.']))};
+  const setAddr=async a=>{await api('admin/config',{addr:a},ATOK);CFG_ADDR=a;await admPaint();am(a?'Deposit address saved. Users now see it.':'Using the simulated address again.',a?'up':'')};
+  $('#aks').onclick=run(async()=>{const k=$('#ak').value.trim();if(!k)throw new Error('Paste a key to save.');await setKey(k)});
+  if($('#akr'))$('#akr').onclick=run(()=>setKey(''));
+  $('#aas').onclick=run(async()=>{const a=$('#aa').value.trim();if(!a)throw new Error('Enter a Tron address (starts with T).');await setAddr(a)});
+  if($('#aar'))$('#aar').onclick=run(()=>setAddr(''));
+  $('#nub').onclick=run(async()=>{const n=$('#nu').value.trim().toLowerCase(),p=$('#np').value;
+   await api('admin/users',{username:n,password:p},ATOK);await admPaint();am('User "'+n+'" added.','up')});
+  document.querySelectorAll('.rm').forEach(b=>{let armed=0;b.onclick=run(async()=>{
+   if(!armed){armed=1;b.textContent='Tap to confirm';b.style.color='var(--dn)';setTimeout(()=>{armed=0;b.textContent='Remove';b.style.color=''},3000);return}
+   await api('admin/users/delete',{username:b.dataset.u},ATOK);await admPaint();am('User "'+b.dataset.u+'" removed.','up')})});
+  $('#anb').onclick=run(async()=>{const pw=$('#an').value;if(pw.length<6)throw new Error('Use at least 6 characters.');await api('admin/passcode',{passcode:pw},ATOK);$('#an').value='';am('Passcode updated.','up')});
+  $('#alo').onclick=()=>{api('admin/logout',{},ATOK).catch(()=>{});ATOK='';admPaint()};
+ }
+ $('#ax').onclick=closeAdm}
+$('#adm').onclick=e=>{if(e.target.id==='adm')closeAdm()};
+addEventListener('hashchange',()=>{if(location.hash==='#admin')openAdm()});
+
+/* ---------- start ---------- */
+async function init(){
+ authPaint();
+ await loadCfg();
+ if(!BE){aerr('Can’t reach the server. Start it with node server.js, then reload.');return}
+ if(TOK){try{enterApp(await api('me'));if(location.hash==='#admin')openAdm();return}catch(e){TOK='';store.del('sim_tok')}}
+ if(location.hash==='#admin')openAdm()}
+init();
+setTimeout(()=>{const b=document.getElementById('boot');if(!b)return;document.body.classList.remove('booting');b.classList.add('out');setTimeout(()=>b.remove(),500)},1800);
+</script>
+</body></html>
