@@ -124,7 +124,7 @@ Object.assign(LV.o,LV.px);
 const PR=['BTC/USDT','ETH/USDT','SOL/USDT','BNB/USDT','XRP/USDT'];
 LV.fmt=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:v<10?4:2,maximumFractionDigits:v<10?4:2});
 LV.chg=k=>LV.real&&k in LV.ch?LV.ch[k]:(LV.px[k]/LV.o[k]-1)*100; // real: 24h change from the market; fallback: change since load
-LV.label=t=>t==='apps'?'Simulated network activity':!LV.real?'Simulated · live prices unavailable':Date.now()-LV.ok>90000?'Prices delayed':'Live market prices';
+LV.label=t=>t==='apps'?'Network activity':!LV.real?'Simulated · live prices unavailable':Date.now()-LV.ok>90000?'Prices delayed':'Live market prices';
 LV.rows=n=>Object.keys(LV.px).slice(0,n||9).map(k=>{const c=LV.chg(k);return `<div class="item row" style="padding:11px 14px;margin:0 0 8px"><b>${k}/USDT</b><div style="text-align:right"><b>${LV.fmt(LV.px[k])}</b><div class="${c>=0?'up':'dn'} mu">${c>=0?'+':''}${c.toFixed(2)}%</div></div></div>`}).join('');
 LV.tick=()=>{
  if(!LV.real)for(const k in LV.px)LV.px[k]*=1+(Math.random()-.5)*.002; // only simulate while real prices are unavailable
