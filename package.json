@@ -1,0 +1,13 @@
+{
+  "name": "trade-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Trading app with user accounts, an admin panel, live prices and USDT (TRC20) deposit checks via TronGrid. Saves to Upstash Redis or a local file.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
