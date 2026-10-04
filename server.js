@@ -169,20 +169,26 @@ const clientIp = req => {
 const uname = s => typeof s === 'string' ? s.trim().toLowerCase() : '';
 const validName = n => /^[a-z0-9_]{3,20}$/.test(n) && !(n in Object.prototype);
 const validPw = p => typeof p === 'string' && p.length >= 8 && p.length <= 72;
-const pub = u => ({ username: u.name, dep: u.dep, deps: u.deps, pnl: u.pnl, trades: u.trades });
-async function createUser(name, pw) {
+const emailOf = e => typeof e === 'string' ? e.trim().toLowerCase() : '';
+const validEmail = e => e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+const byEmail = e => Object.values(db.users).find(u => u.email && u.email === e);
+const pub = u => ({ username: u.name, email: u.email || '', dep: u.dep, deps: u.deps, pnl: u.pnl, trades: u.trades });
+async function createUser(name, pw, email) {
+  if (!validEmail(email)) throw err(400, 'Enter a valid email address.');
   if (!validName(name)) throw err(400, 'Username: 3–20 letters, numbers or underscores.');
   if (!validPw(pw)) throw err(400, 'Password must be 8–72 characters.');
   if (Object.hasOwn(db.users, name)) throw err(409, 'That username is taken.');
+  if (byEmail(email)) throw err(409, 'That email is already registered.');
   const salt = newSalt(), h = await hashPw(pw, salt);
   if (Object.hasOwn(db.users, name)) throw err(409, 'That username is taken.'); // re-check after await
-  db.users[name] = { name, salt, h, created: Date.now(), dep: 0, deps: [], pnl: 0, pnlAt: Date.now(), budget: 3, trades: [] };
+  if (byEmail(email)) throw err(409, 'That email is already registered.');
+  db.users[name] = { name, email, salt, h, created: Date.now(), dep: 0, deps: [], pnl: 0, pnlAt: Date.now(), budget: 3, trades: [] };
   touch.user(name);
   await durable(() => { delete db.users[name]; });
   return db.users[name];
 }
 const userList = () => Object.values(db.users)
-  .map(u => ({ username: u.name, created: u.created, dep: u.dep, pnl: u.pnl, trades: u.trades.length }))
+  .map(u => ({ username: u.name, email: u.email || '', created: u.created, dep: u.dep, pnl: u.pnl, trades: u.trades.length }))
   .sort((a, b) => b.created - a.created);
 
 /* ---------- tron helpers ---------- */
@@ -314,15 +320,15 @@ const routes = {
   /* --- user accounts --- */
   'POST /api/auth/register': async (req, body) => {
     if (limited('reg:' + clientIp(req), 10, 900e3)) throw err(429, 'Too many attempts. Try again later.');
-    const u = await createUser(uname(body.username), body.password);
+    const u = await createUser(uname(body.username), body.password, emailOf(body.email));
     return { token: newSession('user', u.name), user: pub(u) };
   },
   'POST /api/auth/login': async (req, body) => {
     if (limited('login:' + clientIp(req), 20, 900e3)) throw err(429, 'Too many attempts. Try again in 15 minutes.');
     const n = uname(body.username), pw = typeof body.password === 'string' ? body.password.slice(0, 200) : '';
-    const u = Object.hasOwn(db.users, n) ? db.users[n] : null;
+    const u = n.includes('@') ? (byEmail(n) || null) : Object.hasOwn(db.users, n) ? db.users[n] : null; // sign in with username or email
     const h = await hashPw(pw, u ? u.salt : '0'.repeat(32)); // same work whether or not the user exists
-    if (!u || !same(h, u.h)) throw err(401, 'Wrong username or password.');
+    if (!u || !same(h, u.h)) throw err(401, 'Wrong username/email or password.');
     return { token: newSession('user', u.name), user: pub(u) };
   },
   'POST /api/auth/logout': async (req) => { const s = sess(req); if (s) { delete db.sessions[s.key]; touch.sess(s.key); save(); } return { ok: true }; },
@@ -436,7 +442,7 @@ const routes = {
   'GET /api/admin/users': async (req) => { needAdmin(req); return { users: userList() }; },
   'POST /api/admin/users': async (req, body) => {
     needAdmin(req);
-    await createUser(uname(body.username), body.password);
+    await createUser(uname(body.username), body.password, emailOf(body.email));
     return { users: userList() };
   },
   'POST /api/admin/users/delete': async (req, body) => {
