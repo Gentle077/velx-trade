@@ -124,7 +124,7 @@ Object.assign(LV.o,LV.px);
 const PR=['BTC/USDT','ETH/USDT','SOL/USDT','BNB/USDT','XRP/USDT'];
 LV.fmt=v=>'$'+v.toLocaleString('en-US',{minimumFractionDigits:v<10?4:2,maximumFractionDigits:v<10?4:2});
 LV.chg=k=>LV.real&&k in LV.ch?LV.ch[k]:(LV.px[k]/LV.o[k]-1)*100; // real: 24h change from the market; fallback: change since load
-LV.label=t=>t==='apps'?'Network activity':!LV.real?'Simulated · live prices unavailable':Date.now()-LV.ok>90000?'Prices delayed':'Live market prices';
+LV.label=t=>t==='apps'?'Simulated network activity':!LV.real?'Simulated · live prices unavailable':Date.now()-LV.ok>90000?'Prices delayed':'Live market prices';
 LV.rows=n=>Object.keys(LV.px).slice(0,n||9).map(k=>{const c=LV.chg(k);return `<div class="item row" style="padding:11px 14px;margin:0 0 8px"><b>${k}/USDT</b><div style="text-align:right"><b>${LV.fmt(LV.px[k])}</b><div class="${c>=0?'up':'dn'} mu">${c>=0?'+':''}${c.toFixed(2)}%</div></div></div>`}).join('');
 LV.tick=()=>{
  if(!LV.real)for(const k in LV.px)LV.px[k]*=1+(Math.random()-.5)*.002; // only simulate while real prices are unavailable
@@ -190,8 +190,9 @@ function authPaint(note){
   <p class="mu" style="margin:6px 0 18px">${reg?'Sign up to start trading. Your balance starts at $0.00.':'Sign in to your account.'}</p>
   <div class="tabs"><button type="button" data-m="in" class="${reg?'':'on'}">Sign in</button><button type="button" data-m="reg" class="${reg?'on':''}">Create account</button></div>
   <form id="af" novalidate>
-   <label class="mu" for="lu">Username</label>
-   <input id="lu" class="fld" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. alex_01">
+   ${reg?`<label class="mu" for="le">Email</label><input id="le" class="fld" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com">`:''}
+   <label class="mu" for="lu">${reg?'Username':'Username or email'}</label>
+   <input id="lu" class="fld" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="${reg?'e.g. alex_01':'Username or email'}">
    <label class="mu" for="lp">Password</label>
    <input id="lp" class="fld" type="password" autocomplete="${reg?'new-password':'current-password'}" placeholder="${reg?'8+ characters':'Your password'}">
    ${reg?`<label class="mu" for="lp2">Repeat password</label><input id="lp2" class="fld" type="password" autocomplete="new-password" placeholder="Repeat password">`:''}
@@ -203,11 +204,14 @@ function authPaint(note){
  $('#af').onsubmit=async e=>{
   e.preventDefault();
   const u=$('#lu').value.trim().toLowerCase(),p=$('#lp').value,b=$('#lg');
-  if(!/^[a-z0-9_]{3,20}$/.test(u))return aerr('Username: 3–20 letters, numbers or underscores.');
+  const em=reg?$('#le').value.trim().toLowerCase():'';
+  if(reg&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em))return aerr('Enter a valid email address.');
+  if(reg||!u.includes('@')){if(!/^[a-z0-9_]{3,20}$/.test(u))return aerr('Username: 3–20 letters, numbers or underscores.')}
+  else if(!u)return aerr('Enter your username or email.');
   if(reg){if(p.length<8)return aerr('Password must be at least 8 characters.');if(p!==$('#lp2').value)return aerr('Passwords do not match.')}
   else if(!p)return aerr('Enter your password.');
   b.disabled=true;aerr('');
-  try{const j=await api(reg?'auth/register':'auth/login',{username:u,password:p},'');TOK=j.token;store.set('sim_tok',TOK);enterApp(j.user)}
+  try{const j=await api(reg?'auth/register':'auth/login',reg?{email:em,username:u,password:p}:{username:u,password:p},'');TOK=j.token;store.set('sim_tok',TOK);enterApp(j.user)}
   catch(er){aerr(er.message)}
   b.disabled=false};
  if(note)aerr(note,true)}
@@ -392,8 +396,9 @@ async function admPaint(){
   ${AC.addr?'<button class="ghost" id="aar" style="width:100%">Switch back to simulated address</button>':''}
   <div id="am" style="margin:12px 0"></div>
   <h3 style="margin:20px 0 8px">Users (${users.length})</h3>
-  ${users.length?users.map(u=>`<div class="item row" style="padding:10px 14px"><div style="min-width:0"><b style="overflow-wrap:anywhere">${esc(u.username)}</b><div class="mu">$${f(u.dep)} deposited · joined ${esc(new Date(u.created).toLocaleDateString())}</div></div><button class="ghost rm" data-u="${esc(u.username)}" style="margin:0;flex:none">Remove</button></div>`).join(''):'<p class="mu" style="margin:0 0 8px">No users yet.</p>'}
-  <div style="margin-top:12px"><input id="nu" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="New username" placeholder="New username">
+  ${users.length?users.map(u=>`<div class="item row" style="padding:10px 14px"><div style="min-width:0"><b style="overflow-wrap:anywhere">${esc(u.username)}</b>${u.email?`<div class="mu" style="overflow-wrap:anywhere">${esc(u.email)}</div>`:''}<div class="mu">$${f(u.dep)} deposited · joined ${esc(new Date(u.created).toLocaleDateString())}</div></div><button class="ghost rm" data-u="${esc(u.username)}" style="margin:0;flex:none">Remove</button></div>`).join(''):'<p class="mu" style="margin:0 0 8px">No users yet.</p>'}
+  <div style="margin-top:12px"><input id="ne" type="email" inputmode="email" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="New user email" placeholder="Email">
+  <input id="nu" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="New username" placeholder="New username">
   <input id="np" type="password" autocomplete="new-password" aria-label="New user password" placeholder="Password (8+ characters)">
   <button class="go" id="nub">Add user</button></div>
   <h3 style="margin:20px 0 4px">Admin passcode</h3>
@@ -407,8 +412,8 @@ async function admPaint(){
   if($('#akr'))$('#akr').onclick=run(()=>setKey(''));
   $('#aas').onclick=run(async()=>{const a=$('#aa').value.trim();if(!a)throw new Error('Enter a Tron address (starts with T).');await setAddr(a)});
   if($('#aar'))$('#aar').onclick=run(()=>setAddr(''));
-  $('#nub').onclick=run(async()=>{const n=$('#nu').value.trim().toLowerCase(),p=$('#np').value;
-   await api('admin/users',{username:n,password:p},ATOK);await admPaint();am('User "'+n+'" added.','up')});
+  $('#nub').onclick=run(async()=>{const n=$('#nu').value.trim().toLowerCase(),p=$('#np').value,em=$('#ne').value.trim().toLowerCase();
+   await api('admin/users',{email:em,username:n,password:p},ATOK);await admPaint();am('User "'+n+'" added.','up')});
   document.querySelectorAll('.rm').forEach(b=>{let armed=0;b.onclick=run(async()=>{
    if(!armed){armed=1;b.textContent='Tap to confirm';b.style.color='var(--dn)';setTimeout(()=>{armed=0;b.textContent='Remove';b.style.color=''},3000);return}
    await api('admin/users/delete',{username:b.dataset.u},ATOK);await admPaint();am('User "'+b.dataset.u+'" removed.','up')})});
