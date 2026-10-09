@@ -187,7 +187,7 @@ function authPaint(note){
  $('#auth').innerHTML=`<div class="abox">
   <div class="row" style="margin-bottom:26px"><div class="logo">velx<span>trade</span></div>${seg(true)}</div>
   <h1>${reg?'Create your account':'Welcome back'}</h1>
-  <p class="mu" style="margin:6px 0 18px">${reg?'Sign up to start trading. Your balance starts at $0.00.':'Sign in to your account.'}</p>
+  <p class="mu" style="margin:6px 0 18px">${reg?'Sign up to start trading.':'Sign in to your account.'}</p>
   <div class="tabs"><button type="button" data-m="in" class="${reg?'':'on'}">Sign in</button><button type="button" data-m="reg" class="${reg?'on':''}">Create account</button></div>
   <form id="af" novalidate>
    ${reg?`<label class="mu" for="le">Email</label><input id="le" class="fld" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com">`:''}
